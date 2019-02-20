@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CONF_FILE=~/.sx-demo
-STARTX_IS=https://raw.githubusercontent.com/startxfr/docker-images/startx/openshift-imageStreams.yml
+STARTX_IS=https://raw.githubusercontent.com/startxfr/docker-images/master/openshift-imageStreams.yml
 TEMPLATE_URL=https://raw.githubusercontent.com/startxfr/okd-demo-storage/master
 DEFAULT_PROJECT=demo-storage
 DEFAULT_FLAVOUR=latest
@@ -124,8 +124,8 @@ function menuDelete {
 	oc delete template startx-demo-storage-volatile-template -n $SXDC_PROJECT
 	oc delete template startx-demo-storage-resilient-template -n $SXDC_PROJECT
 	oc delete template startx-demo-storage-distributed-template -n $SXDC_PROJECT
-	echo -e "Delete \033[1mdemo ressources\033[0mfrom rovider startx in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete all,configmap,secret,pvc,route -l provider=startx -n $SXDC_PROJECT
+	echo -e "Delete \033[1mdemo ressources\033[0mfrom provider startx in project \033[1m$SXDC_PROJECT\033[0m"
+	oc delete all,configmap,secret,pvc,route,template,is -l provider=startx -n $SXDC_PROJECT
 }
 
 # do menu usage
@@ -148,13 +148,33 @@ Usage:
   ...                    you must then use a demo sub-command to use this demo script
   delete                 Delete all resources used from this demo
 
-
 - Ephemeral demo commands:
   ephemeral start        Start ephemeral demo
   ephemeral watch        Watch resources for ephemeral demo resources
   ephemeral ps           List resources for ephemeral demo resources
   ephemeral ls           List storage backend for ephemeral demo
   ephemeral delete       Delete all resources for ephemeral demo
+
+- Volatile demo commands:
+  volatile start         Start volatile demo
+  volatile watch         Watch resources for volatile demo resources
+  volatile ps            List resources for volatile demo resources
+  volatile ls            List storage backend for volatile demo
+  volatile delete        Delete all resources for volatile demo
+
+- Resilient demo commands:
+  resilient start        Start resilient demo
+  resilient watch        Watch resources for resilient demo resources
+  resilient ps           List resources for resilient demo resources
+  resilient ls           List storage backend for resilient demo
+  resilient delete       Delete all resources for resilient demo
+
+- Distributed demo commands:
+  distributed start      Start distributed demo
+  distributed watch      Watch resources for distributed demo resources
+  distributed ps         List resources for distributed demo resources
+  distributed ls         List storage backend for distributed demo
+  distributed delete     Delete all resources for distributed demo
 
 EOF
 }
