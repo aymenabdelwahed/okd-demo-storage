@@ -6,10 +6,13 @@ TEMPLATE_URL=https://raw.githubusercontent.com/startxfr/okd-demo-storage/master
 DEFAULT_PROJECT=demo-storage
 DEFAULT_FLAVOUR=latest
 SXDC_PROJECT=$DEFAULT_PROJECT
-SXDC_CLUSTER=https://openshift.cloud.startx.fr:8443
+SXDC_CLUSTER=https://ocp.cloud.startx.fr:8443
 SXDC_ADM=admin
 SXDC_ADMP=redhat
+SXDC_ATOKEN=''
 SXDC_USER=dev
+SXDC_USERP=redhat
+SXDC_TOKEN=''
 
 # config file
 touch $CONF_FILE
@@ -28,109 +31,174 @@ function reloadConf {
 # do menu install
 function menuInstall {
 	echo -e "Install \033[1mgit,curl, oc\033[0m dependencies"
-	sudo yum install -y curl git atomic-openshift-clients 
-	echo -e "Create the \033[1mpersistent volume\033[0m in openshift"
-	oc login -u $SXDC_ADM -p $SXDC_ADMP $SXDC_CLUSTER
-	oc create -f $TEMPLATE_URL/okd-template-pv.yml
+	sudo yum install -y curl git atomic-openshift-clients bash-completion
+	echo -e "Install \033[1mauto-completion\033[0m"
+	curl -Ls $TEMPLATE_URL/completion > /etc/bash_completion.d/startx-demo
+	chmod ugo+x /etc/bash_completion.d/startx-demo
+	exec bash
+	echo -e "Mark this demo as \033[1mloaded\033[0m on this server"
+	touch $CONF_FILE.loaded
+}
+
+# do menu setup
+function menuSetup {
+case $2 in
+    cluster)   		appendConf SXDC_CLUSTER $3;;
+    admin-user)   	appendConf SXDC_ADM $3;;
+    admin-pwd)   	appendConf SXDC_ADMP $3;;
+    dev-user)   	appendConf SXDC_USER $3;;
+    dev-pwd)   		appendConf SXDC_USERP $3;;
+    project)   		appendConf SXDC_PROJECT $3;;
+    *)  	
+cat <<EOF
+
+Startx setup sub-command
+
+Usage:
+  startx-demo setup <key> <value>
+
+- Availables keys:
+  cluster <val>        Setup the cluster API backend
+  admin-user <val>     Setup the admin user of the openshift cluster
+  admin-pwd <val>      Setup the admin password of the openshift cluster
+  dev-user <val>       Setup the developer user of the openshift cluster
+  dev-pwd <val>        Setup the developer password of the openshift cluster
+  project <val>        Setup the project to use for this demo
+
+EOF
+;;
+esac
 }
 
 # do menu login
 function menuLogin {
-	#test if openshift is connected
-	ou=`oc whoami`
-	if [[ $? != 0 || $2 == 'force' ]]; then
-	  	echo "Openshift is not logged."
-		echo -en "User name : "
-		read un
-		echo -en "Password  : "
-		read pw
-		echo -en "Cluster  \e[2m(\e[0m\e[1m$SXDC_CLUSTER\e[0m\e[2m)\e[0m : "
-		read cl
-		if [[ "$cl" != "" ]]; then
-			appendConf SXDC_CLUSTER $cl
-	  		echo -e "Switching to cluster \033[1m$SXDC_CLUSTER\033[0m"
-		fi
-		if [[ "$un" != "" && "$pw" != "" ]]; then
-			lg=`oc login $SXDC_CLUSTER -u $un -p $pw`
-			if [[ "$?" != 0 ]]; then
-			  	echo -e "Could not login to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$un\033[0m"
-			  	echo -e "Log to openshift cluster first 'oc login $SXDC_CLUSTER -u $un -p <pwd>'"
-			  	echo -e "or run 'startx-demo login'"
-			  	exit 1;
-			else
-				appendConf SXDC_USER $un
-				echo -e "Logged to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_USER\033[0m"
-			  	exit 0;
-			fi
+	reconnect=false
+	echo -en "Cluster \e[2m(\e[0m\e[1m$SXDC_CLUSTER\e[0m\e[2m)\e[0m : "
+	read cl
+	echo -en "Admin name \e[2m(\e[0m\e[1m$SXDC_ADM\e[0m\e[2m)\e[0m : "
+	read an
+	echo -en "Admin password \e[2m(\e[0m\e[1m******\e[0m\e[2m)\e[0m : "
+	read apw
+	echo -en "Developer name \e[2m(\e[0m\e[1m$SXDC_USER\e[0m\e[2m)\e[0m : "
+	read un
+	echo -en "Developer password \e[2m(\e[0m\e[1m******\e[0m\e[2m)\e[0m : "
+	read pw
+	if [[ "$cl" != "" && "$cl" != "$SXDC_CLUSTER" ]]; then
+		appendConf SXDC_CLUSTER $cl
+  		echo -e "Switching to cluster \033[1m$SXDC_CLUSTER\033[0m"
+		reconnect=true
+	fi
+	if [[ "$an" != "" && "$an" != "$SXDC_ADM" ]]; then
+		appendConf SXDC_ADM $an
+  		echo -e "Switching to admin \033[1m$SXDC_ADM\033[0m"
+		reconnect=true
+	fi
+	if [[ "$apw" != "" && "$apw" != "$SXDC_ADMP" ]]; then
+		appendConf SXDC_ADMP $apw
+  		echo -e "Change \033[1m$SXDC_ADM\033[0m password"
+		reconnect=true
+	fi
+	if [[ "$un" != "" && "$un" != "$SXDC_USER" ]]; then
+		appendConf SXDC_USER $un
+  		echo -e "Switching to user \033[1m$SXDC_USER\033[0m"
+		reconnect=true
+	fi
+	if [[ "$pw" != "" && "$pw" != "$SXDC_USERP" ]]; then
+		appendConf SXDC_USERP $pw
+  		echo -e "Change \033[1m$SXDC_USER\033[0m password"
+		reconnect=true
+	fi
+	if [[ $reconnect == true ]]; then
+		lga=`oc login $SXDC_CLUSTER -u $SXDC_ADM -p $SXDC_ADMP`
+		if [[ "$?" != 0 ]]; then
+		  	echo -e "Could not login to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_ADM\033[0m"
+		  	echo -e "Log to openshift cluster first 'oc login $SXDC_CLUSTER -u $SXDC_ADM -p <pwd>'"
+		  	echo -e "or run 'startx-demo login'"
+		  	exit 1;
 		else
-		  echo -e "Log to openshift cluster first 'oc login $SXDC_CLUSTER -u <user> -p <pwd>'"
-		  echo -e "or run 'startx-demo login'"
-		  exit 1;
+			echo -e "Logged to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_ADM\033[0m (capture token)"
+		  	tokena=`oc whoami -t`
+			appendConf SXDC_ATOKEN $tokena
 		fi
-	else
-		appendConf SXDC_USER $ou
-		echo -e "Logged to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_USER\033[0m"
+		lg=`oc login $SXDC_CLUSTER -u $SXDC_USER -p $SXDC_USERP`
+		if [[ "$?" != 0 ]]; then
+		  	echo -e "Could not login to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_USER\033[0m"
+		  	echo -e "Log to openshift cluster first 'oc login $SXDC_CLUSTER -u $SXDC_USER -p <pwd>'"
+		  	echo -e "or run 'startx-demo login'"
+		  	exit 1;
+		else
+			echo -e "Logged to \033[1m$SXDC_CLUSTER\033[0m with user \033[1m$SXDC_USER\033[0m (capture token)"
+		  	token=`oc whoami -t`
+			appendConf SXDC_TOKEN $token
+		fi
+		exit 0;
 	fi
 }
 
 # do menu project
 function menuProject {
 	#test current project
-	pj=`oc project -q`
+	current=`oc project -q --token=$SXDC_TOKEN`
+	target=$SXDC_PROJECT
 	pjr=$?
-	if [[ $pj != '' && $SXDC_PROJECT != $pj ]]; then
-		appendConf SXDC_PROJECT $pj
+	if [[ $pjr != 0 ]]; then
+		current=''
 	fi
-	oc project $SXDC_PROJECT &> /dev/null
-	pjr=$?
-	if [[ $pjr != 0 || $2 = "force" ]]; then
-		if [ $2 = "force" ]; then
-	  		echo "Force new project"
-		else
-	  		echo "No project found"
-		fi
+	if [[ "$3" != "" ]]; then
+		target=$3
+	else
 		echo -en "Project name \e[2m(\e[0m\e[1m$SXDC_PROJECT\e[0m\e[2m)\e[0m : "
-		read pjn
-		if [[ "$pjn" != "" ]]; then
-			appendConf SXDC_PROJECT $pjn
-			oc new-project $SXDC_PROJECT
+		read new
+		if [[ "$new" != "" ]]; then
+			target=$new
 		fi
 	fi
-	echo -e "Switching to project \033[1m$SXDC_PROJECT\033[0m"
-	oc project $SXDC_PROJECT
+	if [[ $target != $current ]]; then
+		appendConf SXDC_PROJECT $target
+		echo -e "Switching to project \033[1m$SXDC_PROJECT\033[0m"
+		oc project $SXDC_PROJECT --token=$SXDC_TOKEN &> /dev/null
+	fi
 }
 
 # do menu get
 function menuGet {
 	echo -e "Get all resource in project \033[1m$SXDC_PROJECT\033[0m"
-	oc get secret,configmap,is,template -n $SXDC_PROJECT
+	oc get secret,configmap,is,template -n $SXDC_PROJECT --token=$SXDC_TOKEN
 }
 
 # do menu load
 function menuLoad {
-	echo -e "Loading \033[1mstartx\033[0m images streams (10 images x 8 flavours) in project \033[1m$SXDC_PROJECT\033[0m"
-	oc create -f $STARTX_IS -n $SXDC_PROJECT
-	echo -e "Loading template \033[1mstartx-demo-storage-ephemeral-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc create -f $TEMPLATE_URL/okd-template-ephemeral.yml -n $SXDC_PROJECT
-	echo -e "Loading template \033[1mstartx-demo-storage-volatile-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc create -f $TEMPLATE_URL/okd-template-volatile.yml -n $SXDC_PROJECT
-	echo -e "Loading template \033[1mstartx-demo-storage-resilient-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc create -f $TEMPLATE_URL/okd-template-resilient.yml -n $SXDC_PROJECT
-	echo -e "Loading template \033[1mstartx-demo-storage-distributed-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc create -f $TEMPLATE_URL/okd-template-distributed.yml -n $SXDC_PROJECT
+	echo -e "Create the \033[1mpersistent volume\033[0m template in openshift (admin)"
+	oc create -f $TEMPLATE_URL/okd-template-pv.yml --token=$SXDC_ATOKEN
+	echo -e "Show the \033[1mpersistent volume\033[0m ready to be created (admin)"
+	oc process startx-demo-storage-pv-template -p APP_NAME=$SXDC_PROJECT --token=$SXDC_ATOKEN
+	echo -e "Create the \033[1mpersistent volume\033[0m (admin)"
+	oc process startx-demo-storage-pv-template -p APP_NAME=$SXDC_PROJECT --token=$SXDC_ATOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	echo -e "Loading \033[1mstartx\033[0m images streams (10 images x 8 flavours) in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc create -f $STARTX_IS -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Loading template \033[1mstartx-demo-storage-ephemeral-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc create -f $TEMPLATE_URL/okd-template-ephemeral.yml -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Loading template \033[1mstartx-demo-storage-volatile-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc create -f $TEMPLATE_URL/okd-template-volatile.yml -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Loading template \033[1mstartx-demo-storage-resilient-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc create -f $TEMPLATE_URL/okd-template-resilient.yml -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Loading template \033[1mstartx-demo-storage-distributed-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc create -f $TEMPLATE_URL/okd-template-distributed.yml -n $SXDC_PROJECT --token=$SXDC_TOKEN
 }
 
 # do menu delete
 function menuDelete {
-	echo -e "Delete \033[1mstartx\033[0m images streams in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete is,secret,configmap,all -l provider=startx -n $SXDC_PROJECT
-	echo -e "Delete template \033[1mstartx-demo-storage-deploy-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete template startx-demo-storage-ephemeral-template -n $SXDC_PROJECT
-	oc delete template startx-demo-storage-volatile-template -n $SXDC_PROJECT
-	oc delete template startx-demo-storage-resilient-template -n $SXDC_PROJECT
-	oc delete template startx-demo-storage-distributed-template -n $SXDC_PROJECT
-	echo -e "Delete \033[1mdemo ressources\033[0mfrom provider startx in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete all,configmap,secret,pvc,route,template,is -l provider=startx -n $SXDC_PROJECT
+	echo -e "Delete \033[1mstartx\033[0m images streams in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc delete is,secret,configmap,all -l provider=startx -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Delete template \033[1mstartx-demo-storage-deploy-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc delete template startx-demo-storage-ephemeral-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc delete template startx-demo-storage-volatile-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc delete template startx-demo-storage-resilient-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc delete template startx-demo-storage-distributed-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Delete \033[1mdemo ressources\033[0mfrom provider startx in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc delete all,configmap,secret,pvc,route,template,is -l provider=startx -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Delete the \033[1mpersistent volume\033[0m used in this demo (admin)"
+	oc delete pv -l APP_NAME=$SXDC_PROJECT --token=$SXDC_ATOKEN
 }
 
 # do menu usage
@@ -144,10 +212,9 @@ Usage:
 
 - Commands:
   install                Setup openshift client (oc) and auto-completion if installed
-  login                  Login to openshift cluster (detect active connection)
-  login force            Force re-connection to the openshift cluster
-  project                Setup openshift demo project (detect current project)
-  project force          Force creating a new project
+  setup <key> <val>      Setup a configuration key
+  login                  Login to openshift cluster
+  project <name>         Setup openshift demo project (interactive if no name)
   load                   Load openshift demo resource (images streams and templates)
   get                    List al ressources used in this demo
   ...                    you must then use a demo sub-command to use this demo script
@@ -351,11 +418,24 @@ esac
 
 
 
+# Mandatory to be root to get access to the docker daemon and host storage resources
+uid=$(id -u)
+if [[ $uid != 0 ]]; then
+	echo "You must be root to run this demo (required for storage monitoring)"
+	exit 1;
+fi
+# Mandatory to install this demo prior to any action (exepted setup, install and usage)
+if [[ ! -f $CONF_FILE.loaded && $1 != "install" && $1 != "setup" && $1 != "" ]]; then
+	echo "You must install this demo first. Execute :"
+	echo "# startx-demo install "
+	exit 1;
+fi
 ## Start prog switch
 reloadConf
 clear
 case $1 in
     install)                menuInstall $@ ;;
+    setup)                  menuSetup $@ ;;
     login)                  menuLogin $@ ;;
     project)                menuProject $@ ;;
     load)                   menuLoad $@ ;;
