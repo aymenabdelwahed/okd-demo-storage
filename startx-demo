@@ -7,6 +7,8 @@ DEFAULT_PROJECT=demo-storage
 DEFAULT_FLAVOUR=latest
 SXDC_PROJECT=$DEFAULT_PROJECT
 SXDC_CLUSTER=https://openshift.cloud.startx.fr:8443
+SXDC_ADM=admin
+SXDC_ADMP=redhat
 SXDC_USER=dev
 
 # config file
@@ -27,6 +29,9 @@ function reloadConf {
 function menuInstall {
 	echo -e "Install \033[1mgit,curl, oc\033[0m dependencies"
 	sudo yum install -y curl git atomic-openshift-clients 
+	echo -e "Create the \033[1mpersistent volume\033[0m in openshift"
+	oc login -u $SXDC_ADM -p $SXDC_ADMP $SXDC_CLUSTER
+	oc create -f $TEMPLATE_URL/okd-template-pv.yml
 }
 
 # do menu login

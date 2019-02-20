@@ -200,7 +200,7 @@ parameters:
 - name: APP_NAME
   displayName: Application name
   description: The name of the created application
-  value: apache
+  value: resilient
   required: true
 - name: APP_STAGE
   displayName: Application stage

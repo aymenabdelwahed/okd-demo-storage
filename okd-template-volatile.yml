@@ -64,6 +64,22 @@ objects:
     SX_NAME: Static web application ${APP_NAME}
     SX_SUMMARY: Static web application ${APP_NAME} based on fedora container
     SX_VERSION: 0.0.1 
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}-pvc"
+    annotations:
+      openshift.io/display-name: Persistent volume claim for ${APP_NAME}
+      openshift.io/generated-by: STARTX
+    labels:
+      app: "${APP_NAME}"
+      stage: "${APP_STAGE}"
+  spec:
+    accessModes:
+      - ReadWriteOnce 
+    resources:
+      requests:
+        storage: 128Mi
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -157,8 +173,8 @@ objects:
             mountPath: "/var/log/httpd"
         volumes:
         - name: "${APP_NAME}-log"
-          emptyDir:
-            medium: ''
+          persistentVolumeClaim:
+            claimName: "${APP_NAME}-pvc"
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         securityContext: {}
@@ -200,7 +216,7 @@ parameters:
 - name: APP_NAME
   displayName: Application name
   description: The name of the created application
-  value: apache
+  value: volatile
   required: true
 - name: APP_STAGE
   displayName: Application stage
