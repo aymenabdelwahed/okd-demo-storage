@@ -10,8 +10,48 @@ The specifications for the servers and the steps to follow can be found in the R
 ## Openshift installation
 
 Explanation
-Once your servers are properly setup, you need to create your inventory file that will be used in the playbook to install Openshift.
+Once your servers are properly setup, you need to create your inventory file (/etc/ansible/hosts) that will be used in the playbook to install Openshift.
 There are some examples in the Red Hat Documentation.
+Here is the inventory used in the demo:
+###################
+[OSEv3:children]
+masters
+nodes
+etcd
+
+[OSEv3:vars]
+ansible_ssh_user=root
+os_firewall_use_firewalld=true
+openshift_deployment_type=openshift-enterprise
+#openshift_portal_net=172.30.0.0/16
+## localhost likely doesn't meet the minimum requirements
+openshift_disable_check=disk_availability,memory_availability
+
+#Cluster Authentication Variables
+
+openshift_master_identity_providers=[ {'name':'htpasswd_auth','login':'true','challenge':'true','kind':'HTPasswdPasswordIdentityProvider'} ]
+openshift_master_htpasswd_users={'admin':'adminpasswd','developer':'developerpasswd'}
+
+openshift_master_default_subdomain=cloudapps.example.com
+
+oreg_url=registry.redhat.io/openshift3/ose-${component}:${version}
+#Red Hat login
+oreg_auth_user=
+oreg_auth_password=
+
+openshift_node_groups=[{'name': 'node-config-all-in-one', 'labels': ['node-role.kubernetes.io/master=true', 'node-role.kubernetes.io/infra=true', 'node-role.kubernetes.io/compute=true']}]
+
+#Below, you can use IP, FQDN or localhost if you install and run the installer on the master server
+[masters]
+localhost ansible_connection=local
+
+[etcd]
+localhost ansible_connection=local
+
+[nodes]
+#openshift_node_group_name should refer to a dictionary with matching key of name in list openshift_node_groups.
+localhost ansible_connection=local openshift_node_group_name="node-config-all-in-one" openshift_public_hostname=example.com openshift_public_ip=
+#################
 
 ## NFS server
 
