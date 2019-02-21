@@ -1,15 +1,50 @@
 # okd-demo-storage requirements
 
 Requirements for this demo
+You need to have the correct Red Hat Subscription allowing access to Red Hat Openshift Container Platform channels in order to install OCP.
+You will need to provision one or several RHEL Servers depending on your needs for the Openshift cluster.
+In our demo, there is only one server running an all-in-one Openshift cluster.
+In AWS, a t2.xlarge or t2.2xlarge is sufficient for testing/POC needs.
+The specifications for the servers and the steps to follow can be found in the Red Hat Document: https://access.redhat.com/documentation/en-us/openshift_container_platform/3.11/html/installing_clusters/
 
 ## Openshift installation
 
 Explanation
+Once your servers are properly setup, you need to create your inventory file that will be used in the playbook to install Openshift.
+There are some examples in the Red Hat Documentation.
 
 ## NFS server
 
 Explanation
+Althought NFS doesn't offer the best performances, it is often used in order to provide persistent storage.
+Create a dozen or more folders that will be presented to the cluster in /etc/exports.
+For example:
+	/PersistentStorage/sto1 *(rw,root_squash)
+	/PersistentStorage/sto2 *(rw,root_squash)
+	/PersistentStorage/sto3 *(rw,root_squash)
+	/PersistentStorage/sto4 *(rw,root_squash)
+	/PersistentStorage/sto5 *(rw,root_squash)
+	/PersistentStorage/sto6 *(rw,root_squash)
+	/PersistentStorage/sto7 *(rw,root_squash)
+	/PersistentStorage/sto8 *(rw,root_squash)
+	/PersistentStorage/sto9 *(rw,root_squash)
+	/PersistentStorage/sto10 *(rw,root_squash)
+And mount them in your master server:
+	nfs.server.fr:/PersistentStorage/sto1        /mnt/PersistentStorage/sto1  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto2        /mnt/PersistentStorage/sto2  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto3        /mnt/PersistentStorage/sto3  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto4        /mnt/PersistentStorage/sto4  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto5        /mnt/PersistentStorage/sto5  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto6        /mnt/PersistentStorage/sto6  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto7        /mnt/PersistentStorage/sto7  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto8        /mnt/PersistentStorage/sto8  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto9        /mnt/PersistentStorage/sto9  nfs     defaults        0 0
+	nfs.server.fr:/PersistentStorage/sto10        /mnt/PersistentStorage/sto10  nfs     defaults        0 0
+
+
 
 ## AWS Configuration
 
 Explanation
+You will need to associate Elastic IPs to your servers and NFS server if you plan to shut them down from time to time. If not their public IP wil change when you start them back up and the servers won't be able to reach each other.
+Also, if you use FQDN in the inventory or /etc/fstab you will need to create DNS entries in Route53 for the servers as well as a wildcard for the app url (when new routes will be created).
