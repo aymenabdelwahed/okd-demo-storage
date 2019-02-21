@@ -88,7 +88,7 @@ parameters:
 - name: NFS_SERVER
   displayName: Startx NFS server
   description: "DNS or IP for the NFS backend"
-  value: 35.180.215.237
+  value: nfs.startx.fr
   required: true
 - name: VOLUME_SIZE
   displayName: Volume size

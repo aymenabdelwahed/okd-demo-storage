@@ -186,6 +186,8 @@ function menuLoad {
 function menuGet {
 	echo -e "Get all resource in project \033[1m$SXDC_PROJECT\033[0m"
 	oc get secret,configmap,is,template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Get PV resource \033[1mglobaly declared\033[0m"
+	oc get pv -n $SXDC_PROJECT --token=$SXDC_ATOKEN
 	echo -e "You can now run 'startx-demo ephemeral', 'startx-demo volatile', 'startx-demo resilient' or 'startx-demo distributed' "
 }
 
