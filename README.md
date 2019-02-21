@@ -23,10 +23,6 @@ curl -Ls https://goo.gl/a1UakD > /usr/local/bin/startx-demo
 chmod ugo+x /usr/local/bin/startx-demo
 ## Setup demo parameters (if not default)
 #startx-demo setup cluster <cluster-api-url>
-#startx-demo setup admin-user admin
-#startx-demo setup admin-pwd <pwd>
-#startx-demo setup dev-user developer
-#startx-demo setup dev-pwd <pwd>
 #startx-demo setup project demo-storage
 ## Start demo installation
 startx-demo install
