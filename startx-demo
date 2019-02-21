@@ -134,8 +134,8 @@ function menuLogin {
 function menuProject {
 	#test current project
 	current=`oc project -q --token=$SXDC_TOKEN`
-	target=$SXDC_PROJECT
 	pjr=$?
+	target=$SXDC_PROJECT
 	if [[ $pjr != 0 ]]; then
 		current=''
 	fi
@@ -148,10 +148,15 @@ function menuProject {
 			target=$new
 		fi
 	fi
+	oc get project $target --token=$SXDC_TOKEN &> /dev/null
+	if [[ $? != 0 ]]; then
+		echo -e "Creating project \033[1m$target\033[0m"
+		oc new-project $target --token=$SXDC_TOKEN
+	fi
 	if [[ $target != $current ]]; then
 		appendConf SXDC_PROJECT $target
 		echo -e "Switching to project \033[1m$SXDC_PROJECT\033[0m"
-		oc project $SXDC_PROJECT --token=$SXDC_TOKEN &> /dev/null
+		oc project $SXDC_PROJECT --token=$SXDC_TOKEN
 	fi
 	echo -e "You can now run 'startx-demo load' "
 }
@@ -164,8 +169,8 @@ function menuLoad {
 	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT --token=$SXDC_ATOKEN -o yaml
 	echo -e "Create the \033[1mpersistent volume\033[0m (admin)"
 	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT --token=$SXDC_ATOKEN | oc create --token=$SXDC_ATOKEN -f -
-	echo -e "Loading \033[1mstartx\033[0m images streams (10 images x 8 flavours) in project \033[1m$SXDC_PROJECT\033[0m (developer)"
-	oc create -f $STARTX_IS -n $SXDC_PROJECT --token=$SXDC_TOKEN
+#	echo -e "Loading \033[1mstartx\033[0m images streams (10 images x 8 flavours) in project \033[1m$SXDC_PROJECT\033[0m (developer)"
+#	oc create -f $STARTX_IS -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	echo -e "Loading template \033[1mstartx-demo-storage-ephemeral-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
 	oc create -f $TEMPLATE_URL/okd-template-ephemeral.yml -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	echo -e "Loading template \033[1mstartx-demo-storage-volatile-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"

@@ -56,15 +56,15 @@ This demo will show how epheperal storage is handled by openshift infrastructure
 with as single Pod deployement and no PV storage associated to Pod volume.
 
 ```bash
-#start the ephemeral demo
+## Start the ephemeral demo
 startx-demo ephemeral start
-#watch openshift ressources and storage content for the ephemeral demo (dynamic)
+## Watch openshift ressources and storage content for the ephemeral demo (dynamic)
 startx-demo ephemeral watch
-#show openshift ressources for the ephemeral demo
+## Show openshift ressources for the ephemeral demo
 startx-demo ephemeral ps
-#show storage content for the ephemeral demo
+## Show storage content for the ephemeral demo
 startx-demo ephemeral ls
-#delete openshift ressources and storage content for the ephemeral demo (asynchronous)
+## Delete openshift ressources and storage content for the ephemeral demo (asynchronous)
 startx-demo ephemeral delete
 ```
 
@@ -75,15 +75,15 @@ with a single Pod lifecycle using a persistent storage defined as a `Recycle` re
 access mode.
 
 ```bash
-#start the volatile demo
+## Start the volatile demo
 startx-demo volatile start
-#watch openshift ressources and storage content for the volatile demo (dynamic)
+## Watch openshift ressources and storage content for the volatile demo (dynamic)
 startx-demo volatile watch
-#show openshift ressources for the volatile demo
+## Show openshift ressources for the volatile demo
 startx-demo volatile ps
-#show storage content for the volatile demo
+## Show storage content for the volatile demo
 startx-demo volatile ls
-#delete openshift ressources and storage content for the volatile demo (asynchronous)
+## Delete openshift ressources and storage content for the volatile demo (asynchronous)
 startx-demo volatile delete
 ```
 
@@ -94,15 +94,15 @@ with a single Pod lifecycle using a persistent storage defined as a `Retain` rec
 access mode.
 
 ```bash
-#start the resilient demo
+## Start the resilient demo
 startx-demo resilient start
-#watch openshift ressources and storage content for the resilient demo (dynamic)
+## Watch openshift ressources and storage content for the resilient demo (dynamic)
 startx-demo resilient watch
-#show openshift ressources for the resilient demo
+## Show openshift ressources for the resilient demo
 startx-demo resilient ps
-#show storage content for the resilient demo
+## Show storage content for the resilient demo
 startx-demo resilient ls
-#delete openshift ressources and storage content for the resilient demo (asynchronous)
+## Delete openshift ressources and storage content for the resilient demo (asynchronous)
 startx-demo resilient delete
 ```
 
@@ -113,15 +113,15 @@ with a multiple Pod lifecycle using a persistent storage defined as a `Retain` r
 access mode.
 
 ```bash
-#start the distributed demo
+## Start the distributed demo
 startx-demo distributed start
-#watch openshift ressources and storage content for the distributed demo (dynamic)
+## Watch openshift ressources and storage content for the distributed demo (dynamic)
 startx-demo distributed watch
-#show openshift ressources for the distributed demo
+## Show openshift ressources for the distributed demo
 startx-demo distributed ps
-#show storage content for the distributed demo
+## Show storage content for the distributed demo
 startx-demo distributed ls
-#delete openshift ressources and storage content for the distributed demo (asynchronous)
+## Delete openshift ressources and storage content for the distributed demo (asynchronous)
 startx-demo distributed delete
 ```
 
@@ -129,7 +129,9 @@ startx-demo distributed delete
 ## close this demo
 
 ```bash
-#remove all resource and project
+## Remove all resource and project
 startx-demo delete
+# Remove all resource, project and demo script
+#startx-demo delete all
 ```
 
