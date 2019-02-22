@@ -69,17 +69,6 @@ For example:
 	/PersistentStorage/sto8 *(rw,root_squash)
 	/PersistentStorage/sto9 *(rw,root_squash)
 	/PersistentStorage/sto10 *(rw,root_squash)
-# And mount them in your master server:
-	nfs.server.fr:/PersistentStorage/sto1        /mnt/PersistentStorage/sto1  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto2        /mnt/PersistentStorage/sto2  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto3        /mnt/PersistentStorage/sto3  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto4        /mnt/PersistentStorage/sto4  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto5        /mnt/PersistentStorage/sto5  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto6        /mnt/PersistentStorage/sto6  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto7        /mnt/PersistentStorage/sto7  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto8        /mnt/PersistentStorage/sto8  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto9        /mnt/PersistentStorage/sto9  nfs     defaults        0 0
-	nfs.server.fr:/PersistentStorage/sto10        /mnt/PersistentStorage/sto10  nfs     defaults        0 0
 ```
 
 
