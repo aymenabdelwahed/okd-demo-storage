@@ -83,7 +83,7 @@ objects:
       project: "${APP_NAMESPACE}"
   spec:
     accessModes:
-      - ReadWriteOnce 
+      - ReadWriteMany 
     selector:
       matchLabels:
         project: "${APP_NAMESPACE}"
@@ -104,7 +104,7 @@ objects:
       openshift.io/display-name: Deployement ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
   spec:
-    replicas: 1
+    replicas: 2
     strategy:
       type: Rolling
       rollingParams:

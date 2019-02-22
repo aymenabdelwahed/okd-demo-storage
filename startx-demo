@@ -7,6 +7,9 @@ DEFAULT_PROJECT=demo-storage
 DEFAULT_FLAVOUR=latest
 SXDC_PROJECT=$DEFAULT_PROJECT
 SXDC_CLUSTER=https://openshift.cloud.startx.fr:8443
+SXDC_NFS_KEY=~/aws.pem
+SXDC_NFS_SERVER=nfs.startx.fr
+SXDC_NFS_DIR=/PersistentStorage
 SXDC_ATOKEN=''
 SXDC_TOKEN=''
 
@@ -31,6 +34,7 @@ function menuInstall {
 	echo -e "Install \033[1mauto-completion\033[0m"
 	curl -Ls $TEMPLATE_URL/completion > /etc/bash_completion.d/startx-demo
 	chmod ugo+x /etc/bash_completion.d/startx-demo
+	echo -e "Create test directory for hoshpath \033[1m/mnt/hostDir\033[0m"
 	mkdir /mnt/hostDir
 	chmod ugo+rwx /mnt/hostDir
 	echo -e "Mark this demo as \033[1mloaded\033[0m on this server"
@@ -168,9 +172,9 @@ function menuLoad {
 	echo -e "Create the \033[1mpersistent volume\033[0m template in openshift (admin)"
 	oc create -f $TEMPLATE_URL/okd-template-pv.yml --token=$SXDC_ATOKEN
 	echo -e "Show the \033[1mpersistent volume\033[0m ready to be created (admin)"
-	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT --token=$SXDC_ATOKEN -o yaml
+	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT -p NFS_SERVER=$SXDC_NFS_SERVER -p NFS_PATH=$SXDC_NFS_DIR --token=$SXDC_ATOKEN -o yaml
 	echo -e "Create the \033[1mpersistent volume\033[0m (admin)"
-	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT --token=$SXDC_ATOKEN | oc create --token=$SXDC_ATOKEN -f -
+	oc process startx-demo-storage-pv-template -p APP_NAMESPACE=$SXDC_PROJECT -p NFS_SERVER=$SXDC_NFS_SERVER -p NFS_PATH=$SXDC_NFS_DIR --token=$SXDC_ATOKEN | oc create --token=$SXDC_ATOKEN -f -
 #	echo -e "Loading \033[1mstartx\033[0m images streams (10 images x 8 flavours) in project \033[1m$SXDC_PROJECT\033[0m (developer)"
 #	oc create -f $STARTX_IS -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	echo -e "Loading template \033[1mstartx-demo-storage-ephemeral-template\033[0m in project \033[1m$SXDC_PROJECT\033[0m (developer)"
@@ -209,6 +213,12 @@ function menuDelete {
 	oc delete all,configmap,secret,pvc,route,template,is -l provider=startx -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	echo -e "Delete the \033[1mpersistent volume\033[0m used in this demo (admin)"
 	oc delete pv -l project=$SXDC_PROJECT --token=$SXDC_ATOKEN
+	echo -e "Delete content generated in \033[1m$SXDC_NFS_SERVER\033[0m directory \033[1m$SXDC_NFS_DIR/stoX/*\033[0m"
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto13/*.*'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto14/*.*'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto15/*.*'
+	echo -e "Delete test directory for hostPath \033[1m/mnt/hostDir\033[0m directory"
+	rm -rf /mnt/hostDir
 	if [[ "$3" != "all" ]]; then
 		echo -e "Removing also the \033[1mdemo materials\033[0m"
 		rm -f ~/.sx-demo ~/.sx-demo.loaded /etc/bash_completion.d/startx-demo /usr/local/bin/startx-demo
@@ -376,7 +386,7 @@ case $2 in
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN; echo ""; oc describe pv -l app=$appType --token=$SXDC_ATOKEN; "
+	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -385,6 +395,7 @@ case $2 in
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
 	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto13'
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -406,7 +417,7 @@ case $2 in
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN; echo ""; oc describe pv -l app=$appType --token=$SXDC_ATOKEN; "
+	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -415,6 +426,7 @@ case $2 in
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
 	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto14'
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -436,7 +448,7 @@ case $2 in
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN; echo ""; oc describe pv -l app=$appType --token=$SXDC_ATOKEN; "
+	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -445,6 +457,7 @@ case $2 in
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
 	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto15'
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
