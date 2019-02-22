@@ -219,6 +219,8 @@ function menuDelete {
 	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo rm -rf $SXDC_NFS_DIR/sto15/*.*"
 	echo -e "Delete test directory for hostPath \033[1m/mnt/hostDir\033[0m directory"
 	rm -rf /mnt/hostDir
+	echo -e "Delete project \033[1m$SXDC_PROJECT\033[0m (developer)"
+	oc delete project $SXDC_PROJECT --token=$SXDC_TOKEN
 	if [[ "$3" == "all" ]]; then
 		echo -e "Removing also the \033[1mdemo materials\033[0m"
 		rm -f ~/.sx-demo ~/.sx-demo.loaded /etc/bash_completion.d/startx-demo /usr/local/bin/startx-demo
