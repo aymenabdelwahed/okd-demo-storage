@@ -338,9 +338,10 @@ function menuHostpath {
 case $2 in
     start)               
 	echo -e "Start \033[1mdemo-storage-hostpath\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	oc adm policy add-scc-to-user privileged -z userhost
+    oc create serviceaccount userhost --token=$SXDC_ATOKEN
+	oc adm policy add-scc-to-user privileged -z userhost --token=$SXDC_ATOKEN
 	oc process startx-demo-storage-hostpath-template -p APP_NAMESPACE=demo-storage -p APP_NAME=hostpath -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
-	oc patch dc/hostpath  --patch '{"spec":{"template":{"spec":{"serviceAccountName": "userhost"}}}}'
+	oc patch dc/hostpath  --patch '{"spec":{"template":{"spec":{"serviceAccountName": "userhost"}}}}' --token=$SXDC_TOKEN
 	;;
     watch)
 	echo -e "Watch \033[1mdemo-storage-hostpath\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -366,7 +367,7 @@ esac
 ## Volatile sub-section
 # do menu volatile
 function menuVolatile {
-appType=volative
+appType=volatile
 tplType=$appType
 case $2 in
     start) 

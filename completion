@@ -2,7 +2,7 @@
 
 _demo_all()
 {
-  local available="install setup login project load get delete ephemeral volatile resilient distributed usage"
+  local available="install setup login project load get delete ephemeral hostpath volatile resilient distributed usage"
   local available2=" "
   local availableSetup="cluster project"
   local availableDemoMode="start watch ps ls delete"
@@ -12,6 +12,7 @@ _demo_all()
     elif [ "${COMP_WORDS[1]}" == "delete" ]; then
       available2=$availableDelete
     elif [[ "${COMP_WORDS[1]}" == "ephemeral" || 
+           "${COMP_WORDS[1]}" == "hostpath" ||
            "${COMP_WORDS[1]}" == "volatile" || 
            "${COMP_WORDS[1]}" == "resilient" || 
            "${COMP_WORDS[1]}" == "distributed" ]]; then
