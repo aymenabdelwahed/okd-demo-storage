@@ -52,8 +52,8 @@ After you environment setup, you can run one or all demo type according to your 
 
 ## Excute ephemeral demo
 
-This demo will show how epheperal storage is handled by openshift infrastructure and how data if preserved and released
-with as single Pod deployement and no PV storage associated to Pod volume.
+This demo will show how emptydir storage is handled by openshift infrastructure and how data if preserved and released
+with as single Pod deployement and no PV storage associated to Pod volume (emptydir).
 
 ```bash
 ## Start the ephemeral demo
@@ -66,6 +66,24 @@ startx-demo ephemeral ps
 startx-demo ephemeral ls
 ## Delete openshift ressources and storage content for the ephemeral demo (asynchronous)
 startx-demo ephemeral delete
+
+
+## Excute hostpath demo
+
+This demo will show how hostpath storage is handled by openshift infrastructure and how data if preserved and released
+with as single Pod deployement and no PV storage associated to Pod volume (hostpath).
+
+```bash
+## Start the hostpath demo
+startx-demo hostpath start
+## Watch openshift ressources and storage content for the hostpath demo (dynamic)
+startx-demo hostpath watch
+## Show openshift ressources for the hostpath demo
+startx-demo hostpath ps
+## Show storage content for the hostpath demo
+startx-demo hostpath ls
+## Delete openshift ressources and storage content for the hostpath demo (asynchronous)
+startx-demo hostpath delete
 ```
 
 ## Excute volatile demo
