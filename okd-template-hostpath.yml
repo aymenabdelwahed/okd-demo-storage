@@ -1,10 +1,10 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: startx-demo-storage-resilient-template
+  name: startx-demo-storage-hostpath-template
   annotations:
-    openshift.io/display-name: Startx Http Server (resilient deploy workflow)
-    description: Deployement workflow of a static web application using resilient storage
+    openshift.io/display-name: Startx Http Server (hostpath deploy workflow)
+    description: Deployement workflow of a static web application using hostpath storage
       for logs records. Use apache with various underlying linux distribution. See 
       https://hub.docker.com/r/startx/sv-apache
     iconClass: icon-apache
@@ -20,9 +20,9 @@ message: |-
   Project     : ${APP_NAMESPACE}
   Application : ${APP_NAME}
   Stage       : ${APP_STAGE}
-  Kind        : resilient
+  Kind        : hostpath
 labels:
-  template: startx-demo-storage-resilient-template
+  template: startx-demo-storage-hostpath-template
   provider: startx 
 objects:
 - kind: ImageStream
@@ -69,28 +69,6 @@ objects:
     SX_NAME: Static web application ${APP_NAME}
     SX_SUMMARY: Static web application ${APP_NAME} based on apache container
     SX_VERSION: 0.0.1 
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: "${APP_NAME}-log"
-    namespace: "${APP_NAMESPACE}"
-    annotations:
-      openshift.io/display-name: Persistent volume claim for ${APP_NAME} ${APP_STAGE} application
-      openshift.io/generated-by: STARTX
-    labels:
-      app: "${APP_NAME}"
-      stage: "${APP_STAGE}"
-      project: "${APP_NAMESPACE}"
-  spec:
-    accessModes:
-      - ReadWriteOnce 
-    selector:
-      matchLabels:
-        project: "${APP_NAMESPACE}"
-        kind: "resilient"
-    resources:
-      requests:
-        storage: 128Mi
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -175,6 +153,8 @@ objects:
             periodSeconds: 8
             successThreshold: 1
             failureThreshold: 2
+          securityContext:
+            privileged: true
           resources:
             limits:
               cpu: 2000m
@@ -189,8 +169,8 @@ objects:
             mountPath: "/var/log/httpd"
         volumes:
         - name: "${APP_NAME}-log"
-          persistentVolumeClaim:
-            claimName: "${APP_NAME}-log"
+          hostPath:
+            path: "/mnt/hostDir"
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         securityContext: {}
@@ -243,7 +223,7 @@ parameters:
 - name: APP_NAME
   displayName: Application name
   description: The name of the created application
-  value: resilient
+  value: hostpath
   required: true
 - name: APP_STAGE
   displayName: Application stage

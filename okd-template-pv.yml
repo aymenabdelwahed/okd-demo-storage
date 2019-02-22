@@ -13,11 +13,10 @@ metadata:
     openshift.io/documentation-url: https://hub.docker.com/r/startx/sv-apache
     openshift.io/support-url: https://github.com/startxfr/docker-images/issues/new
 message: |-
-  Your starages for application ${APP_NAME} is provisionned.
+  Your persistents storages for project ${APP_NAMESPACE} is provisionned.
 
-  Application : ${APP_NAME}
-  Stage       : ${APP_STAGE}
-  Kind        : volatile
+  Project     : ${APP_NAMESPACE}
+  Kind        : volatile, resilient, distributed
 labels:
   template: startx-demo-storage-pv-template
   provider: startx 
@@ -25,13 +24,13 @@ objects:
 - kind: PersistentVolume
   apiVersion: v1
   metadata:
-    name: ${APP_NAME}-volatile
+    name: ${APP_NAMESPACE}-volatile
     annotations:
-      openshift.io/display-name: PV Volatile ${APP_NAME}
+      openshift.io/display-name: Volatile PV for project ${APP_NAMESPACE}
       openshift.io/generated-by: STARTX
     labels:
-      app: "${APP_NAME}"
-      stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
+      kind: "volatile"
   spec:
     capacity:
       storage: "${VOLUME_SIZE}"
@@ -39,18 +38,18 @@ objects:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     nfs:
-      path: /mnt/PersistentStorage/sto13
+      path: "${NFS_PATH}/sto13"
       server: "${NFS_SERVER}"
 - kind: PersistentVolume
   apiVersion: v1
   metadata:
-    name: ${APP_NAME}-resilient
+    name: ${APP_NAMESPACE}-resilient
     annotations:
-      openshift.io/display-name: PV Resilient ${APP_NAME}
+      openshift.io/display-name: Resilient PV for project ${APP_NAMESPACE}
       openshift.io/generated-by: STARTX
     labels:
-      app: "${APP_NAME}"
-      stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
+      kind: "resilient"
   spec:
     capacity:
       storage: "${VOLUME_SIZE}"
@@ -58,18 +57,18 @@ objects:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Retain
     nfs:
-      path: /mnt/PersistentStorage/sto14
+      path: "${NFS_PATH}/sto14"
       server: "${NFS_SERVER}"
 - kind: PersistentVolume
   apiVersion: v1
   metadata:
-    name: ${APP_NAME}-distributed
+    name: ${APP_NAMESPACE}-distributed
     annotations:
-      openshift.io/display-name: PV Distributed ${APP_NAME}
+      openshift.io/display-name: Distributed PV for project ${APP_NAMESPACE}
       openshift.io/generated-by: STARTX
     labels:
-      app: "${APP_NAME}"
-      stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
+      kind: "distributed"
   spec:
     capacity:
       storage: "${VOLUME_SIZE}"
@@ -77,24 +76,24 @@ objects:
       - ReadWriteMany
     persistentVolumeReclaimPolicy: Retain
     nfs:
-      path: /mnt/PersistentStorage/sto15
+      path: "${NFS_PATH}/sto15"
       server: "${NFS_SERVER}"
       readOnly: false
 parameters:
-- name: APP_NAME
-  displayName: Application name
-  description: The name of the created application
-  value: demo
-  required: true
-- name: APP_STAGE
-  displayName: Application stage
-  description: "Stage of the application deployed (ex: dev, test, prod, example, demo, poc, ...)"
-  value: demo
+- name: APP_NAMESPACE
+  displayName: Project
+  description: Project name where application is deployed
+  value: demo-storage
   required: true
 - name: NFS_SERVER
   displayName: Startx NFS server
   description: "DNS or IP for the NFS backend"
-  value: 35.180.215.237
+  value: nfs.startx.fr
+  required: true
+- name: NFS_PATH
+  displayName: Path to storage directory in NFS server
+  description: "path to the directory containing the storages contents"
+  value: /PersistentStorage
   required: true
 - name: VOLUME_SIZE
   displayName: Volume size

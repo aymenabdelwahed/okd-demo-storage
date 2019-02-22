@@ -13,10 +13,11 @@ metadata:
     openshift.io/documentation-url: https://hub.docker.com/r/startx/sv-apache
     openshift.io/support-url: https://github.com/startxfr/docker-images/issues/new
 message: |-
-  Your application ${APP_NAME} will be soon deployed.
+  Your application ${APP_NAME} will be soon deployed in project ${APP_NAMESPACE}.
   Monitor the deployement for application availability and
   Follow created route to browse running application
 
+  Project     : ${APP_NAMESPACE}
   Application : ${APP_NAME}
   Stage       : ${APP_STAGE}
   Kind        : volatile
@@ -28,17 +29,19 @@ objects:
   apiVersion: v1
   metadata:
     name: "${APP_NAME}"
+    namespace: "${APP_NAMESPACE}"
     annotations:
-      openshift.io/display-name: Application ${APP_NAME}
+      openshift.io/display-name: Application image stream ${APP_NAME} ${APP_STAGE}
       openshift.io/generated-by: STARTX
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
   spec:
     tags:
     - name: ${APP_STAGE}
       annotations:
-        openshift.io/display-name: Application ${APP_NAME} version ${APP_STAGE}
+        openshift.io/display-name: Application container image (${APP_NAME} ${APP_STAGE})
         description: ${APP_STAGE} image for the application ${APP_NAME} based on ${BUILDER_TAG}
         iconClass: icon-apache
         tags: startx,fedora,apache,httpd,application,${APP_NAME},${APP_STAGE},${BUILDER_TAG}
@@ -51,32 +54,40 @@ objects:
   apiVersion: v1
   metadata:
     name: "${APP_NAME}-config"
+    namespace: "${APP_NAMESPACE}"
     annotations:
-      openshift.io/display-name: Application ${APP_NAME} configuration
+      openshift.io/display-name: Configuration for ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
   data:
     SX_ID: ${APP_NAME}/${APP_STAGE}
     SX_TYPE: ${APP_STAGE}
     SX_SERVICE: ${APP_NAME}
     SX_NAME: Static web application ${APP_NAME}
-    SX_SUMMARY: Static web application ${APP_NAME} based on fedora container
+    SX_SUMMARY: Static web application ${APP_NAME} based on apache container
     SX_VERSION: 0.0.1 
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
-    name: "${APP_NAME}-pvc"
+    name: "${APP_NAME}-log"
+    namespace: "${APP_NAMESPACE}"
     annotations:
-      openshift.io/display-name: Persistent volume claim for ${APP_NAME}
+      openshift.io/display-name: Persistent volume claim for ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
   spec:
     accessModes:
       - ReadWriteOnce 
+    selector:
+      matchLabels:
+        project: "${APP_NAMESPACE}"
+        kind: "volatile"
     resources:
       requests:
         storage: 128Mi
@@ -84,10 +95,13 @@ objects:
   apiVersion: v1
   metadata:
     name: "${APP_NAME}"
+    namespace: "${APP_NAMESPACE}"
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
     annotations:
+      openshift.io/display-name: Deployement ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
   spec:
     replicas: 1
@@ -119,6 +133,8 @@ objects:
       metadata:
         labels:
           app: "${APP_NAME}"
+          stage: "${APP_STAGE}"
+          project: "${APP_NAMESPACE}"
           deploymentconfig: "${APP_NAME}"
         annotations:
           openshift.io/generated-by: STARTX
@@ -174,7 +190,7 @@ objects:
         volumes:
         - name: "${APP_NAME}-log"
           persistentVolumeClaim:
-            claimName: "${APP_NAME}-pvc"
+            claimName: "${APP_NAME}-log"
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         securityContext: {}
@@ -183,10 +199,13 @@ objects:
   apiVersion: v1
   metadata:
     name: "${APP_NAME}"
+    namespace: "${APP_NAMESPACE}"
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
     annotations:
+      openshift.io/display-name: Service for ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
   spec:
     ports:
@@ -202,10 +221,13 @@ objects:
   apiVersion: v1
   metadata:
     name: "${APP_NAME}"
+    namespace: "${APP_NAMESPACE}"
     labels:
       app: "${APP_NAME}"
       stage: "${APP_STAGE}"
+      project: "${APP_NAMESPACE}"
     annotations:
+      openshift.io/display-name: Route for ${APP_NAME} ${APP_STAGE} application
       openshift.io/generated-by: STARTX
   spec:
     to:
@@ -213,6 +235,11 @@ objects:
       name: "${APP_NAME}"
       weight: 100
 parameters:
+- name: APP_NAMESPACE
+  displayName: Project
+  description: Project name where application is deployed
+  value: demo-storage
+  required: true
 - name: APP_NAME
   displayName: Application name
   description: The name of the created application
