@@ -153,6 +153,8 @@ objects:
             periodSeconds: 8
             successThreshold: 1
             failureThreshold: 2
+          securityContext:
+            privileged: true
           resources:
             limits:
               cpu: 2000m

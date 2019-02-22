@@ -38,7 +38,7 @@ objects:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     nfs:
-      path: /mnt/PersistentStorage/sto13
+      path: "${NFS_PATH}/sto13"
       server: "${NFS_SERVER}"
 - kind: PersistentVolume
   apiVersion: v1
@@ -57,7 +57,7 @@ objects:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Retain
     nfs:
-      path: /mnt/PersistentStorage/sto14
+      path: "${NFS_PATH}/sto14"
       server: "${NFS_SERVER}"
 - kind: PersistentVolume
   apiVersion: v1
@@ -76,7 +76,7 @@ objects:
       - ReadWriteMany
     persistentVolumeReclaimPolicy: Retain
     nfs:
-      path: /mnt/PersistentStorage/sto15
+      path: "${NFS_PATH}/sto15"
       server: "${NFS_SERVER}"
       readOnly: false
 parameters:
@@ -89,6 +89,11 @@ parameters:
   displayName: Startx NFS server
   description: "DNS or IP for the NFS backend"
   value: nfs.startx.fr
+  required: true
+- name: NFS_PATH
+  displayName: Path to storage directory in NFS server
+  description: "path to the directory containing the storages contents"
+  value: /PersistentStorage
   required: true
 - name: VOLUME_SIZE
   displayName: Volume size
