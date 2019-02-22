@@ -530,7 +530,6 @@ if [[ ! -f $CONF_FILE.loaded && $1 != "install" && $1 != "setup" && $1 != "" ]];
 fi
 ## Start prog switch
 reloadConf
-clear
 case $1 in
     install)                menuInstall $@ ;;
     setup)                  menuSetup $@ ;;
