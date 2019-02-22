@@ -5,7 +5,7 @@ _demo_all()
   local available="install setup login project load get delete ephemeral hostpath volatile resilient distributed usage"
   local available2=" "
   local availableSetup="cluster project"
-  local availableDemoMode="start watch ps ls delete"
+  local availableDemoMode="start info watch ps ls delete"
   local availableDelete="all"
     if [ "${COMP_WORDS[1]}" == "setup" ]; then
       available2=$availableSetup

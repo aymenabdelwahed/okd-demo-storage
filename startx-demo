@@ -214,12 +214,12 @@ function menuDelete {
 	echo -e "Delete the \033[1mpersistent volume\033[0m used in this demo (admin)"
 	oc delete pv -l project=$SXDC_PROJECT --token=$SXDC_ATOKEN
 	echo -e "Delete content generated in \033[1m$SXDC_NFS_SERVER\033[0m directory \033[1m$SXDC_NFS_DIR/stoX/*\033[0m"
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto13/*.*'
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto14/*.*'
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto15/*.*'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo rm -rf $SXDC_NFS_DIR/sto13/*.*"
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo rm -rf $SXDC_NFS_DIR/sto14/*.*"
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo rm -rf $SXDC_NFS_DIR/sto15/*.*"
 	echo -e "Delete test directory for hostPath \033[1m/mnt/hostDir\033[0m directory"
 	rm -rf /mnt/hostDir
-	if [[ "$3" != "all" ]]; then
+	if [[ "$3" == "all" ]]; then
 		echo -e "Removing also the \033[1mdemo materials\033[0m"
 		rm -f ~/.sx-demo ~/.sx-demo.loaded /etc/bash_completion.d/startx-demo /usr/local/bin/startx-demo
 	fi
@@ -248,6 +248,7 @@ Usage:
 
 - Ephemeral demo commands:
   ephemeral start        Start ephemeral demo
+  ephemeral info         Get ephemeral demo resources informations
   ephemeral watch        Watch resources for ephemeral demo resources
   ephemeral ps           List resources for ephemeral demo resources
   ephemeral ls           List storage backend for ephemeral demo
@@ -255,6 +256,7 @@ Usage:
 
 - Hostpath demo commands:
   hostpath start         Start hostpath demo
+  hostpath info          Get hostpath demo resources informations
   hostpath watch         Watch resources for hostpath demo resources
   hostpath ps            List resources for hostpath demo resources
   hostpath ls            List storage backend for hostpath demo
@@ -262,6 +264,7 @@ Usage:
 
 - Volatile demo commands:
   volatile start         Start volatile demo
+  volatile info          Get volatile demo resources informations
   volatile watch         Watch resources for volatile demo resources
   volatile ps            List resources for volatile demo resources
   volatile ls            List storage backend for volatile demo
@@ -269,6 +272,7 @@ Usage:
 
 - Resilient demo commands:
   resilient start        Start resilient demo
+  resilient info         Get resilient demo resources informations
   resilient watch        Watch resources for resilient demo resources
   resilient ps           List resources for resilient demo resources
   resilient ls           List storage backend for resilient demo
@@ -276,6 +280,7 @@ Usage:
 
 - Distributed demo commands:
   distributed start      Start distributed demo
+  distributed info       Get distributed demo resources informations
   distributed watch      Watch resources for distributed demo resources
   distributed ps         List resources for distributed demo resources
   distributed ls         List storage backend for distributed demo
@@ -295,6 +300,7 @@ Usage:
 
 - Commands:
   $2 start        Start $2 demo
+  $2 info         Get $2 demo resources informations
   $2 watch        Watch resources for $2 demo resources
   $2 ps           List resources for $2 demo resources
   $2 ls           List storage backend for $2 demo
@@ -307,34 +313,42 @@ EOF
 ## Ephemeral sub-section
 # do menu ephemeral
 function menuEphemeral {
+appType=ephemeral
+tplType=$appType
 case $2 in
     start)               
-	echo -e "Start \033[1mdemo-storage-ephemeral\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	oc process startx-demo-storage-ephemeral-template -p APP_NAMESPACE=demo-storage -p APP_NAME=ephemeral -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	echo -e "Start \033[1mdemo-storage-$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
+	oc process startx-demo-storage-$tplType-template -p APP_NAMESPACE=demo-storage -p APP_NAME=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	;;
+    info)
+	echo -e "Information on \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe po -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	startx-demo $appType ls
 	;;
     watch)
-	echo -e "Watch \033[1mdemo-storage-ephemeral\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	dockerIds=$(docker ps -sa | grep k8s_ephemeral_ephemeral | grep "Up " | cut -d\  -f1)
+	echo -e "Watch \033[1mdemo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	dockerIds=$(docker ps -sa | grep k8s_$appType_$appType | grep "Up " | cut -d\  -f1)
 	echo -e "Found the following docker container(s) : $dockerIds"
 	listVolumes=$(docker inspect $dockerIds | grep :/var/log/httpd | cut -d\" -f2 | cut -d: -f1 | tr '\n' ' ')
-	echo -e "Found the following ephemeral storage volumes : $listVolumes"
-	watch -n .5 "oc get route,po -l app=ephemeral -n $SXDC_PROJECT --token=$SXDC_TOKEN; echo ""; ls -la $listVolumes;"
+	echo -e "Found the following $appType storage volumes : $listVolumes"
+	watch -n .5 "startx-demo $appType ps; ls -la $listVolumes; "
 	;;
     ps)
-	echo -e "Get all \033[1mdemo-storage-ephemeral\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	oc get configmap,po,dc,svc,route -l app=ephemeral -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Get all \033[1mdemo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	;;
     ls)
-	echo -e "List all ephemeral storage for \033[1mdemo-storage-ephemeral\033[0m application in project \033[1m$SXDC_PROJECT\033[0m"
-	dockerIds=$(docker ps -sa | grep k8s_ephemeral_ephemeral | grep "Up " | cut -d\  -f1)
+	echo -e "List all $appType storage for \033[1mdemo-storage-$appType\033[0m application in project \033[1m$SXDC_PROJECT\033[0m"
+	dockerIds=$(docker ps -sa | grep k8s_$appType_$appType | grep "Up " | cut -d\  -f1)
 	echo -e "Found the following docker container(s) : $dockerIds"
 	listVolumes=$(docker inspect $dockerIds | grep :/var/log/httpd | cut -d\" -f2 | cut -d: -f1 | tr '\n' ' ')
-	echo -e "Found the following ephemeral storage volumes : $listVolumes"
+	echo -e "Found the following $appType storage volumes : $listVolumes"
 	ls -la $listVolumes
 	;;
     delete)
-	echo -e "Delete \033[1mdemo-storage-ephemeral\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete all,configmap,secret,pvc,route -l app=ephemeral -l template=startx-demo-storage-ephemeral-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Delete \033[1mdemo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc delete all,configmap,secret,pvc,route -l app=$appType -l template=startx-demo-storage-$tplType-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	;;
     *)  menuSubUsage $1 ;;
 esac
@@ -345,29 +359,37 @@ esac
 ## Hostpath sub-section
 # do menu hostpath
 function menuHostpath {
+appType=hostpath
+tplType=$appType
 case $2 in
     start)               
-	echo -e "Start \033[1mdemo-storage-hostpath\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
+	echo -e "Start \033[1mdemo-storage-$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
     oc create serviceaccount userhost --token=$SXDC_ATOKEN
 	oc adm policy add-scc-to-user privileged -z userhost --token=$SXDC_ATOKEN
-	oc process startx-demo-storage-hostpath-template -p APP_NAMESPACE=demo-storage -p APP_NAME=hostpath -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
-	oc patch dc/hostpath  --patch '{"spec":{"template":{"spec":{"serviceAccountName": "userhost"}}}}' --token=$SXDC_TOKEN
+	oc process startx-demo-storage-$tplType-template -p APP_NAMESPACE=demo-storage -p APP_NAME=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	oc patch dc/$appType  --patch '{"spec":{"template":{"spec":{"serviceAccountName": "userhost"}}}}' --token=$SXDC_TOKEN
+	;;
+    info)
+	echo -e "Information on \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,dc,svc,route,po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe po -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	startx-demo $appType ls
 	;;
     watch)
-	echo -e "Watch \033[1mdemo-storage-hostpath\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get route,po -l app=hostpath -n $SXDC_PROJECT --token=$SXDC_TOKEN; echo ""; ls -la /mnt/hostDir;"
+	echo -e "Watch \033[1mdemo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	watch -n .5 "startx-demo $appType ps; startx-demo $appType ls; "
 	;;
     ps)
-	echo -e "Get all \033[1mdemo-storage-hostpath\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	oc get configmap,po,dc,svc,route -l app=hostpath -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Get all \033[1mdemo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	;;
     ls)
-	echo -e "List hostpath storage \033[1m/mnt/hostDir\033[0m directory"
+	echo -e "List $appType storage \033[1m/mnt/hostDir\033[0m directory"
 	ls -la /mnt/hostDir
 	;;
     delete)
-	echo -e "Delete \033[1mdemo-storage-hostpath\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
-	oc delete all,configmap,secret,pvc,route -l app=hostpath -l template=startx-demo-storage-hostpath-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	echo -e "Delete \033[1mdemo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc delete all,configmap,secret,pvc,route -l app=$appType -l template=startx-demo-storage-$tplType-template -n $SXDC_PROJECT --token=$SXDC_TOKEN
 	;;
     *)  menuSubUsage $1 ;;
 esac
@@ -383,10 +405,19 @@ case $2 in
     start) 
 	echo -e "Start \033[1mstartx-demo-storage-$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
 	oc process startx-demo-storage-$tplType-template -p APP_NAMESPACE=demo-storage -p APP_NAME=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	oc describe po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	;;
+    info)
+	echo -e "Information on \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,dc,svc,route,po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	startx-demo $appType ls
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
+	watch -n .5 "startx-demo $appType ps; startx-demo $appType ls; "
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -394,8 +425,7 @@ case $2 in
 	;;
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto13'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo ls -la $SXDC_NFS_DIR/sto13"
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -414,10 +444,19 @@ case $2 in
     start) 
 	echo -e "Start \033[1mstartx-demo-storage-$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
 	oc process startx-demo-storage-$tplType-template -p APP_NAMESPACE=demo-storage -p APP_NAME=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	oc describe po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	;;
+    info)
+	echo -e "Information on \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,dc,svc,route,po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	startx-demo $appType ls
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
+	watch -n .5 "startx-demo $appType ps; startx-demo $appType ls; "
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -425,8 +464,7 @@ case $2 in
 	;;
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto14'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo ls -la $SXDC_NFS_DIR/sto14"
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -445,10 +483,19 @@ case $2 in
     start) 
 	echo -e "Start \033[1mstartx-demo-storage-$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
 	oc process startx-demo-storage-$tplType-template -p APP_NAMESPACE=demo-storage -p APP_NAME=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN | oc create -n $SXDC_PROJECT --token=$SXDC_TOKEN -f -
+	oc describe po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	;;
+    info)
+	echo -e "Information on \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
+	oc get configmap,dc,svc,route,po,pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pvc -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN
+	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
+	startx-demo $appType ls
 	;;
     watch)
 	echo -e "Watch \033[1m$appType\033[0m demo in project \033[1m$SXDC_PROJECT\033[0m"
-	watch -n .5 "oc get configmap,po,dc,svc,route -l app=$appType -n $SXDC_PROJECT --token=$SXDC_TOKEN;"
+	watch -n .5 "startx-demo $appType ps; startx-demo $appType ls; "
 	;;
     ps)
 	echo -e "Get all \033[1mstartx-demo-storage-$appType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
@@ -456,8 +503,7 @@ case $2 in
 	;;
     ls)
 	echo -e "List all $appType storage for application \033[1m$appType\033[0m in project \033[1m$SXDC_PROJECT\033[0m"
-	oc describe pv -l app=$appType --token=$SXDC_ATOKEN
-	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER 'sudo ls -la $SXDC_NFS_DIR/sto15'
+	ssh -i $SXDC_NFS_KEY ec2-user@$SXDC_NFS_SERVER "sudo ls -la $SXDC_NFS_DIR/sto15"
 	;;
     delete)
 	echo -e "Delete \033[1mstartx-demo-storage-$tplType\033[0m resources in project \033[1m$SXDC_PROJECT\033[0m"
